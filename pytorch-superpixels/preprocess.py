@@ -1,9 +1,9 @@
-'''For pre-processing'''
-
+import list_loader
 
 def create_masks(numSegments=100, limOverseg=None):
     # Generate image list
-    image_list = get_image_list()
+    image_list = list_loader.image_list('pascal',)
+    image_list = image_list.list
     for image_number in tqdm(image_list):
         # Load image/target pair
         image_name = image_number + ".jpg"
@@ -86,13 +86,3 @@ def create_mask(image, target, numSegments, limOverseg):
         # Apply mask, the mode for majority class
         target_s[superpixel] = target[segment_mask].view(-1).mode()[0]
     return mask, target_s
-
-
-def get_image_list(split=None):
-    if split is None:
-        image_list_path = join(root, "ImageSets/Segmentation/trainval.txt")
-    else:
-        image_list_path = join(root, "ImageSets/Segmentation/", split + ".txt")
-    image_list = tuple(open(image_list_path, "r"))
-    image_list = [id_.rstrip() for id_ in image_list]
-    return image_list
