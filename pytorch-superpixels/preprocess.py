@@ -1,44 +1,47 @@
-import list_loader
+from skimage.io import imread
+from skimage.segmentation import slic
+from skimage.util import img_as_float
+from os.path import exists
+from os.path import join
+from tqdm import tqdm
+from os import mkdir
+import torch
 
-def create_masks(numSegments=100, limOverseg=None):
-    # Generate image list
-    image_list = list_loader.image_list('pascal',)
-    image_list = image_list.list
-    for image_number in tqdm(image_list):
+
+def create_masks(imageList, numSegments=100, limOverseg=None):
+    # Iterate through all images
+    for image_number in tqdm(imageList.list):
         # Load image/target pair
-        image_name = image_number + ".jpg"
-        target_name = image_number + ".png"
-        image_path = join(root, "JPEGImages", image_name)
-        target_path = join(root, "SegmentationClass/pre_encoded", target_name)
-        image = img_as_float(io.imread(image_path))
-        target = io.imread(target_path)
+        image_path = join(imageList.imagePath, image_number + ".jpg")
+        target_path = join(imageList.targetPath, image_number + ".png")
+        image = img_as_float(imread(image_path))
+        target = imread(target_path)
         target = torch.from_numpy(target)
-        # Create mask for image/target pair
-        mask, target_s = create_mask(
-            image=image,
-            target=target,
-            numSegments=numSegments,
-            limOverseg=limOverseg
-        )
-
-        # Save for later
-        image_save_dir = join(
-            root,
-            "SegmentationClass/{}_sp".format(numSegments)
-        )
-        target_s_save_dir = join(
-            root,
-            "SegmentationClass/pre_encoded_{}_sp".format(numSegments)
-        )
-        if not exists(image_save_dir):
-            mkdir(image_save_dir)
-        if not exists(target_s_save_dir):
-            mkdir(target_s_save_dir)
-        save_name = image_number + ".pt"
-        image_save_path = join(image_save_dir, save_name)
-        target_s_save_path = join(target_s_save_dir, save_name)
-        torch.save(mask, image_save_path)
-        torch.save(target_s, target_s_save_path)
+        # Save paths
+        saveDir = join(imageList.path, 'SuperPixels')
+        maskDir = join(saveDir, '{}_sp_mask'.format(numSegments))
+        targetDir = join(saveDir, '{}_sp_target'.format(numSegments))
+        # Check that directories exist
+        if not exists(saveDir):
+            mkdir(saveDir)
+        if not exists(maskDir):
+            mkdir(maskDir)
+        if not exists(targetDir):
+            mkdir(targetDir)
+        # Define save paths
+        mask_save_path = join(maskDir, image_number + ".pt")
+        target_save_path = join(targetDir, image_number + ".pt")
+        # If they haven't already been made, make them
+        if not exists(mask_save_path) and not exists(target_save_path):
+            # Create mask for image/target pair
+            mask, target_s = create_mask(
+                image=image,
+                target=target,
+                numSegments=numSegments,
+                limOverseg=limOverseg
+            )
+            torch.save(mask, mask_save_path)
+            torch.save(target_s, target_save_path)
 
 
 def create_mask(image, target, numSegments, limOverseg):
