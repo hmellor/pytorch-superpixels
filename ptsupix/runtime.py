@@ -3,13 +3,7 @@ from os.path import join
 from os.path import exists
 from os.path import dirname
 from os.path import abspath
-from os import mkdir
-from os import remove
 from os import listdir
-from tqdm import tqdm
-from skimage import io
-from skimage.util import img_as_float
-from skimage.segmentation import slic
 
 # Define absolute path for accessing dataset files
 package_dir = dirname(abspath(__file__))

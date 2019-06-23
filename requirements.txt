@@ -1,0 +1,5 @@
+scikit_image==0.14.2
+tqdm==4.31.1
+joblib==0.13.2
+torch==1.0.0
+skimage==0.0

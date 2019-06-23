@@ -1,6 +1,8 @@
 from skimage.io import imread
 from skimage.segmentation import slic
 from skimage.util import img_as_float
+from multiprocessing import cpu_count
+from joblib import Parallel, delayed
 from os.path import exists
 from os.path import join
 from tqdm import tqdm
@@ -9,8 +11,8 @@ import torch
 
 
 def create_masks(imageList, numSegments=100, limOverseg=None):
-    # Iterate through all images
-    for image_number in tqdm(imageList.list):
+    # Save mask and target for image number
+    def save_mask(image_number):
         # Load image/target pair
         image_path = join(imageList.imagePath, image_number + ".jpg")
         target_path = join(imageList.targetPath, image_number + ".png")
@@ -42,6 +44,12 @@ def create_masks(imageList, numSegments=100, limOverseg=None):
             )
             torch.save(mask, mask_save_path)
             torch.save(target_s, target_save_path)
+
+    num_cores = cpu_count()
+    inputs = tqdm(imageList.list)
+    # Iterate through all images utilising all CPU cores
+    Parallel(n_jobs=num_cores)(delayed(save_mask)(image_number)
+                               for image_number in inputs)
 
 
 def create_mask(image, target, numSegments, limOverseg):
