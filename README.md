@@ -9,10 +9,10 @@ The aim of this project is to bridge the gap between these existing packages and
 Here is some example code that uses superpixels for semantic segmentation.
 ```
 # Generate list of filenames from your dataset
-imageList = ptsupix.list_loader.image_list(
+imageList = pytorch_superpixels.list_loader.image_list(
     'pascal-seg', './VOCdevkit/VOC2012', 'trainval')
 # Use this list to create and save 100 superpixel dataset
-ptsupix.preprocess.create_masks(imageList, 100)
+pytorch_superpixels.preprocess.create_masks(imageList, 100)
 
 # -----------------------------------------------
 # code that sets up model, optimizer, dataloader, metrics, etc.
