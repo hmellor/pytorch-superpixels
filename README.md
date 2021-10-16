@@ -1,4 +1,6 @@
-# pytorch-superpixels
+# PyTorch Superpixels
+- [Why use superpixels?](#why-use-superpixels)
+- [Example usage](#example-usage)
 ## Why use superpixels?
 Dimensionality reduction allows for the use of simpler networks or more complex objectives. A common way of doing this is to simply downsample the images so that there are fewer pixels to contend with. However, this is a lossy operation so detail (and therefore the upper bound on experimental results) is reduced.
 
@@ -31,12 +33,12 @@ for (images, labels, masks) in trainloader:
         optimizer.zero_grad()
         outputs = model(images)
         # Convert outputs to superpixel form
-        outputs_sp, sizes = convert_to_superpixels(
+        outputs_sp, sizes = pixels_to_superpixels(
             outputs, masks)
         # Calculate loss using size weighted superpixels
         loss = loss_fn(scores=outputs_sp, target=labels, size=sizes)
         # Convert back to pixels for metric evaluation
-        outputs = convert_to_pixels(outputs_sp, masks)
+        outputs = superpixels_to_pixels(outputs_sp, masks)
         # Accumulate train metrics during train
         pred = outputs.data.max(1)[1].cpu().numpy()
         gt = labels.data.cpu().numpy()
@@ -46,8 +48,6 @@ for (images, labels, masks) in trainloader:
         loss.backward()
         optimizer.step()
 ```
-## Known problems
-- So far, only preprocessing and list_loader have been ported, so in its current state, you cannot use this code in your experiments.
 _______________________________________
 
 This project stems from a module I created for use in my master's thesis.

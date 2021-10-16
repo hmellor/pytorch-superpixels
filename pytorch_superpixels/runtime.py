@@ -1,68 +1,37 @@
 import torch
-from os.path import join
-from os.path import exists
-from os.path import dirname
-from os.path import abspath
-from os import listdir
 
-# Define absolute path for accessing dataset files
-package_dir = dirname(abspath(__file__))
-dataset_dir = "../../datasets/VOCdevkit/VOC2011"
-root = join(package_dir, dataset_dir)
 '''For use during runtime'''
 
 
-def convert_to_superpixels(input, target, mask):
-    # Extract size data from input and target
-    images, c, h, w = input.size()
-    if images > 1:
-        raise RuntimeError("Not implemented for batch sizes greater than 1")
+def pixels_to_superpixels(inputs, masks):
+    n, c, h, w = inputs.size()
+    img_size = h * w
     # Initialise vairables to use
-    Q = mask.unique().numel()
-    output = torch.zeros((Q, c), device=input.device)
-    size = torch.zeros(Q, device=input.device)
-    counter = torch.ones(mask.size(), device=input.device)
-    # Calculate the size of each superpixel
-    size.put_(mask, counter, True)
-    # Calculate the mean value of each superpixel
-    input = input.view(c, -1)
-    mask = mask.view(1, -1).repeat(c, 1)
-    arange = torch.arange(start=1, end=c, device=input.device)
-    mask[arange, :] += Q * arange.view(-1, 1)
-    output = output.put_(mask, input, True).view(c, Q).t()
-    output = (output.t() / size).t()
-    return output, target.view(-1), size
+    sizes = [torch.unique(x, return_counts=True)[1] for x in masks]
+    num_superpixels = [size.numel() for size in sizes]
+    outputs = [torch.zeros((Q, c)) for Q in num_superpixels]
+    # reshape tensors
+    inputs = inputs.view(n, c, img_size)
+    masks_copy = masks.view(n, 1, img_size).repeat(1, c, 1)
+    arange = torch.arange(start=0, end=c).view(c, 1).expand(-1, img_size)
+    for i in range(n):
+        # Calculate the mean value of each superpixel
+        masks_copy[i] += num_superpixels[i] * arange
+        outputs[i] = outputs[i].put_(masks_copy[i], inputs[i], True).view(c, num_superpixels[i]).t()
+        outputs[i] = (outputs[i].t() / sizes[i]).t()
+    return outputs, sizes
 
 
-def convert_to_pixels(input, output, mask):
-    n, c, h, w = output.size()
-    for k in range(c):
-        output[0, k, :, :] = torch.gather(
-            input[:, k], 0, mask.view(-1)).view(h, w)
-    return output
+def superpixels_to_pixels(superpixel_images, pixel_images, masks):
+    n, c, h, w = pixel_images.size()
+    superpixelised_images = torch.zeros_like(pixel_images)
+    for i in range(n):
+        for k in range(c):
+            superpixelised_images[i, k, :, :] = torch.gather(superpixel_images[i][:, k], 0, masks[i].view(-1)).view(h, w)
+    return superpixelised_images
 
 
-def to_super_to_pixels(input, mask):
-    target = torch.tensor([])
-    input_s, _, _ = convert_to_superpixels(input, target, mask)
-    output = convert_to_pixels(input_s, input, mask)
-    return output
-
-
-def setup_superpixels(superpixels):
-    image_save_dir = join(
-        root,
-        "SegmentationClass/{}_sp".format(superpixels)
-    )
-    target_s_save_dir = join(
-        root,
-        "SegmentationClass/pre_encoded_{}_sp".format(superpixels)
-    )
-    dirs = [image_save_dir, target_s_save_dir]
-    dataset_len = len(get_image_list())
-    if not any(exists(x) and len(listdir(x)) == dataset_len for x in dirs):
-            print("Superpixel dataset of scale {} superpixels either doesn't exist or is incomplete".format(superpixels))
-            print("Generating superpixel dataset now...")
-            create_masks(superpixels)
-
-    fix_broken_images(superpixels)
+def superpixelise(pixel_images, masks):
+    superpixel_images, _ = pixels_to_superpixels(pixel_images, masks)
+    superpixelised_images = superpixels_to_pixels(superpixel_images, pixel_images, masks)
+    return superpixelised_images
