@@ -1,3 +1,7 @@
+⚠️ The functionality provided by this repository can now be found in [PyTorch Geometric](https://pytorch-geometric.readthedocs.io/en/latest/) in the [to_superpixels()](https://pytorch-geometric.readthedocs.io/en/latest/_modules/torch_geometric/transforms/to_superpixels.html) function.
+
+---
+
 # PyTorch Superpixels
 
 - [Why use superpixels?](#why-use-superpixels)
