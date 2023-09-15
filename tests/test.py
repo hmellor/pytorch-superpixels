@@ -1,8 +1,8 @@
 # Testing dataset generation
-import pytorch_superpixels.preprocess
 import pytorch_superpixels.list_loader
+import pytorch_superpixels.preprocess
 
-
-testList = pytorch_superpixels.list_loader.image_list(
-    'pascal-seg', './VOCdevkit/VOC2012', 'trainval')
-pytorch_superpixels.preprocess.create_masks(testList, 100)
+test_list = pytorch_superpixels.list_loader.ImageList(
+    "pascal-seg", "./VOCdevkit/VOC2012", "trainval"
+)
+pytorch_superpixels.preprocess.create_masks(test_list, 100)

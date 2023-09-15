@@ -1,6 +1,7 @@
+from os.path import join
+
 import torch
 from tqdm import tqdm
-from os.path import join
 
 
 def mask_accuracy(target, mask):
@@ -18,7 +19,7 @@ def mask_accuracy(target, mask):
 def dataset_accuracy(superpixels):
     # Generate image list
     if superpixels is not None:
-        image_list = get_image_list('trainval_super')
+        image_list = get_image_list("trainval_super")
     else:
         image_list = get_image_list()
 
@@ -56,10 +57,7 @@ def find_usable_images(split, superpixels):
     # Generate image list
     image_list = get_image_list(split)
     usable = []
-    target_dir = join(
-        root,
-        "SegmentationClass/pre_encoded_{}_sp".format(superpixels)
-    )
+    target_dir = join(root, "SegmentationClass/pre_encoded_{}_sp".format(superpixels))
     for image_number in image_list:
         target_name = image_number + ".pt"
         target_path = join(target_dir, target_name)
@@ -83,7 +81,7 @@ def fix_broken_images(superpixels):
 def find_size_variance(superpixels):
     # Generate image list
     if superpixels is not None:
-        image_list = get_image_list('trainval_super')
+        image_list = get_image_list("trainval_super")
     else:
         image_list = get_image_list()
     mask_dir = "SegmentationClass/{}_sp".format(superpixels)

@@ -1,6 +1,6 @@
 import torch
 
-'''For use during runtime'''
+"""For use during runtime"""
 
 
 def pixels_to_superpixels(inputs, masks):
@@ -17,7 +17,12 @@ def pixels_to_superpixels(inputs, masks):
     for i in range(n):
         # Calculate the mean value of each superpixel
         masks_copy[i] += num_superpixels[i] * arange
-        outputs[i] = outputs[i].put_(masks_copy[i], inputs[i], True).view(c, num_superpixels[i]).t()
+        outputs[i] = (
+            outputs[i]
+            .put_(masks_copy[i], inputs[i], True)
+            .view(c, num_superpixels[i])
+            .t()
+        )
         outputs[i] = (outputs[i].t() / sizes[i]).t()
     return outputs, sizes
 
@@ -27,11 +32,15 @@ def superpixels_to_pixels(superpixel_images, pixel_images, masks):
     superpixelised_images = torch.zeros_like(pixel_images)
     for i in range(n):
         for k in range(c):
-            superpixelised_images[i, k, :, :] = torch.gather(superpixel_images[i][:, k], 0, masks[i].view(-1)).view(h, w)
+            superpixelised_images[i, k, :, :] = torch.gather(
+                superpixel_images[i][:, k], 0, masks[i].view(-1)
+            ).view(h, w)
     return superpixelised_images
 
 
 def superpixelise(pixel_images, masks):
     superpixel_images, _ = pixels_to_superpixels(pixel_images, masks)
-    superpixelised_images = superpixels_to_pixels(superpixel_images, pixel_images, masks)
+    superpixelised_images = superpixels_to_pixels(
+        superpixel_images, pixel_images, masks
+    )
     return superpixelised_images

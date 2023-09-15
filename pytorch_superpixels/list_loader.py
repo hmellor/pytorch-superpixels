@@ -1,21 +1,23 @@
-from os.path import join
-from os.path import exists
+from os.path import exists, join
 
 
-class image_list:
-    def __init__(self, dataset, path, split='trainval'):
+class ImageList:
+    def __init__(self, dataset, path, split="trainval"):
         # Configured datasets
-        datasets = {'pascal-seg': {'listPath': 'ImageSets/Segmentation/',
-                                   'imagePath': 'JPEGImages',
-                                   'targetPath': 'SegmentationClass'}
-                    }
+        datasets = {
+            "pascal-seg": {
+                "listPath": "ImageSets/Segmentation/",
+                "imagePath": "JPEGImages",
+                "targetPath": "SegmentationClass",
+            }
+        }
         # Object variables
         self.split = split
         self.dataset = dataset
         self.path = path
-        self.listPath = join(path, datasets[dataset]['listPath'])
-        self.imagePath = join(path, datasets[dataset]['imagePath'])
-        self.targetPath = join(path, datasets[dataset]['targetPath'])
+        self.listPath = join(path, datasets[dataset]["listPath"])
+        self.imagePath = join(path, datasets[dataset]["imagePath"])
+        self.targetPath = join(path, datasets[dataset]["targetPath"])
         self.list = []
         # Does the split exist?
         list_path = join(self.listPath, self.split + ".txt")
