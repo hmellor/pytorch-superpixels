@@ -1,37 +1,37 @@
+from multiprocessing import cpu_count
+from os import mkdir
+from os.path import exists, join
+
+import torch
+from joblib import Parallel, delayed
 from skimage.io import imread
 from skimage.segmentation import slic
 from skimage.util import img_as_float
-from multiprocessing import cpu_count
-from joblib import Parallel, delayed
-from os.path import exists
-from os.path import join
 from tqdm import tqdm
-from os import mkdir
-import torch
 
 
-def create_masks(imageList, numSegments=100, limOverseg=None):
+def create_masks(image_list, num_segments=100, oversegmentation_limit=None):
     # Save mask and target for image number
     def save_mask(image_number):
         # Load image/target pair
-        image_path = join(imageList.imagePath, image_number + ".jpg")
-        target_path = join(imageList.targetPath, image_number + ".png")
+        image_path = join(image_list.imagePath, image_number + ".jpg")
+        target_path = join(image_list.targetPath, image_number + ".png")
         image = img_as_float(imread(image_path))
         target = imread(target_path)
         target = torch.from_numpy(target)
         # Save paths
-        saveDir = join(imageList.path, 'SuperPixels')
-        maskDir = join(saveDir, '{}_sp_mask'.format(numSegments))
-        targetDir = join(saveDir, '{}_sp_target'.format(numSegments))
+        save_dir = join(image_list.path, "SuperPixels")
+        mask_dir = join(save_dir, "{}_sp_mask".format(num_segments))
+        targetDir = join(save_dir, "{}_sp_target".format(num_segments))
         # Check that directories exist
-        if not exists(saveDir):
-            mkdir(saveDir)
-        if not exists(maskDir):
-            mkdir(maskDir)
+        if not exists(save_dir):
+            mkdir(save_dir)
+        if not exists(mask_dir):
+            mkdir(mask_dir)
         if not exists(targetDir):
             mkdir(targetDir)
         # Define save paths
-        mask_save_path = join(maskDir, image_number + ".pt")
+        mask_save_path = join(mask_dir, image_number + ".pt")
         target_save_path = join(targetDir, image_number + ".pt")
         # If they haven't already been made, make them
         if not exists(mask_save_path) and not exists(target_save_path):
@@ -39,25 +39,26 @@ def create_masks(imageList, numSegments=100, limOverseg=None):
             mask, target_s = create_mask(
                 image=image,
                 target=target,
-                numSegments=numSegments,
-                limOverseg=limOverseg
+                num_segments=num_segments,
+                oversegmentation_limit=oversegmentation_limit,
             )
             torch.save(mask, mask_save_path)
             torch.save(target_s, target_save_path)
 
     num_cores = cpu_count()
-    inputs = tqdm(imageList.list)
+    inputs = tqdm(image_list.list)
     # Iterate through all images utilising all CPU cores
-    Parallel(n_jobs=num_cores)(delayed(save_mask)(image_number)
-                               for image_number in inputs)
+    Parallel(n_jobs=num_cores)(
+        delayed(save_mask)(image_number) for image_number in inputs
+    )
 
 
-def create_mask(image, target, numSegments, limOverseg):
+def create_mask(image, target, num_segments, oversegmentation_limit):
     # Perform SLIC segmentation
-    mask = slic(image, n_segments=numSegments, slic_zero=True)
+    mask = slic(image, n_segments=num_segments, slic_zero=True)
     mask = torch.from_numpy(mask)
 
-    if limOverseg is not None:
+    if oversegmentation_limit is not None:
         # Oversegmentation step
         superpixels = mask.unique().numel()
         overseg = superpixels
@@ -78,15 +79,16 @@ def create_mask(image, target, numSegments, limOverseg):
                 # Find minority class in superpixel
                 min_class = min(class_hist)
                 # Is the minority class large enough for oversegmentation
-                above_threshold = min_class > class_hist.sum() * limOverseg
+                above_threshold = min_class > class_hist.sum() * oversegmentation_limit
                 if above_threshold:
                     # Leaving one class in supperpixel be
                     for c in classes[1:]:
                         # Adding to the oversegmentation offset
                         overseg += 1
                         # Add offset to class c in the mask
-                        mask[segment_mask] += (target[segment_mask]
-                                               == c).long() * overseg
+                        mask[segment_mask] += (
+                            target[segment_mask] == c
+                        ).long() * overseg
 
     # (Re)define how many superpixels there are and create target_s
     superpixels = mask.unique().numel()

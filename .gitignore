@@ -90,18 +90,8 @@ ENV/
 env.bak/
 venv.bak/
 
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
+# VS Code workspace settings
+.vscode
 
 # Dataset directories
 VOCdevkit
